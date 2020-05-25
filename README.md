@@ -10,18 +10,18 @@ We will train and evaluate our approach on [MIMIC-III](https://www.nature.com/ar
 ![Data Schema](./imgs/Schema.png)
 
 ## Preprocessing
-[Data Processing](./Preprocess/data_processing.ipynb) file contains methods to extract, transform and load the medical notes and codes from corresponding tables. 
-[Note Sections](./Preprocess/note_sections.ipynb) file slice the medical notes into different sections, and then further sliced each section to individual sentences. By consulting literatures and medical professionals, the preprocess discarded meaningless portions, converted text to lowercase, removed stopwords and special characters, and peformed lemmatization and tokenization.
-[High Level Codes](./Preprocess/high_lvl_codes.ipynb) file mapps the low level ICD codes to higher levels and group them into categories.
+- [Data Processing](./Preprocess/data_processing.ipynb) file contains methods to extract, transform and load the medical notes and codes from corresponding tables. 
+- [Note Sections](./Preprocess/note_sections.ipynb) file slice the medical notes into different sections, and then further sliced each section to individual sentences. By consulting literatures and medical professionals, the preprocess discarded meaningless portions, converted text to lowercase, removed stopwords and special characters, and peformed lemmatization and tokenization.
+- [High Level Codes](./Preprocess/high_lvl_codes.ipynb) file mapps the low level ICD codes to higher levels and group them into categories.
 
 ## Models
-[TBD]
+[Under Construction]
 ### LSTM (Long-Short Term Memory Networks)
 Self-Attention Long-Short Term Memory (SLSTM) and Codes Attentive Long-Short Term Memory (CLSTM)
 ![LSTM](./imgs/LSTM.png)
 
 ### HAN (Hierarchical Attention Network)
-<img src="https://github.com/ziyuqiu/icd_prediction/imgs/HAN/png" width="400">
+<img src="https://github.com/ziyuqiu/icd_prediction/imgs/HAN.png" width="400">
 ![HAN](./imgs/HAN.png | width=400)
 
 ### BERT (Bidirectional Encoder Representations from Transformers)
