@@ -21,7 +21,7 @@ Self-Attention Long-Short Term Memory (SLSTM) and Codes Attentive Long-Short Ter
 ![LSTM](./imgs/LSTM.png)
 
 ### HAN (Hierarchical Attention Network)
-<img src="https://github.com/ziyuqiu/icd_prediction/imgs/HAN.png" width="400">
+<img src="https://github.com/ziyuqiu/icd_prediction/blob/master/imgs/HAN.png" width="400">
 ![HAN](./imgs/HAN.png | width=400)
 
 ### BERT (Bidirectional Encoder Representations from Transformers)
