@@ -7,16 +7,16 @@ Particularly, we try two types of attention mechanisms for different model archi
 
 ## Data
 We will train and evaluate our approach on [MIMIC-III](https://www.nature.com/articles/sdata201635) (Medical Information Mart for Intensive Care). It is an open-access dataset comprising de-identified medical records from Beth Israel Deaconess Medical Center from 2001 to 2012. The data is associated with 58,976 distinct hospital admissions from 46,520 patients. Each record describes the diagnoses and procedures during a patient’s stay, including basic structured information, free-text clinical notes, and ICD-9 codes tagged by humans. A detailed description of the dataset could be found [here](https://mimic.physionet.org/). For the purpose of this project, we only used the tables below:
-![Data Schema](./imgs/Schema.png)
+![Data Schema](./imgs/Schema.png =500x)
 
 ## Models
 [TBD]
 ### LSTM (Long-Short Term Memory Networks)
 Self-Attention Long-Short Term Memory (SLSTM) and Codes Attentive Long-Short Term Memory (CLSTM)
-![LSTM](./imgs/LSTM.png)
+![LSTM](./imgs/LSTM.png =500x)
 
 ### HAN (Hierarchical Attention Network)
-![HAN](./imgs/HAN.png)
+![HAN](./imgs/HAN.png =500x)
 
 ### BERT (Bidirectional Encoder Representations from Transformers)
 
