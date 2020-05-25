@@ -17,12 +17,16 @@ We will train and evaluate our approach on [MIMIC-III](https://www.nature.com/ar
 ## Models
 [Under Construction]
 ### LSTM (Long-Short Term Memory Networks)
-Self-Attention Long-Short Term Memory (SLSTM) and Codes Attentive Long-Short Term Memory (CLSTM)
-![LSTM](./imgs/LSTM.png)
+We experimented with Self-Attention Long-Short Term Memory (SLSTM) and Codes Attentive Long-Short Term Memory (CLSTM). Both are comparatively shallow networks with one core bi-directional LSTM layer for word-level encoding. Attention is used to generate a probability distribution over features, allowing models to put more weight on relevant features.
+CLSTM takes an additional title matrix as input, and achieved superior peformance than the simpler SLSTM.
+- [LSTM](./LSTM/LSTM.ipynb) contains the model and evaluation for the two LSTM models.
+- [util](./LSTM/util.py) provides the code to extract the code titles (disease names) and build corpus.
+
+<img src="https://github.com/ziyuqiu/icd_prediction/blob/master/imgs/LSTM.png" width="500">
 
 ### HAN (Hierarchical Attention Network)
 <img src="https://github.com/ziyuqiu/icd_prediction/blob/master/imgs/HAN.png" width="400">
-![HAN](./imgs/HAN.png | width=400)
+
 
 ### BERT (Bidirectional Encoder Representations from Transformers)
 
