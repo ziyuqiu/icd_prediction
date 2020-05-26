@@ -44,5 +44,5 @@ Due to the restriction of BERT’s maximum sequence length, we limit the maximum
 - Yezhou(Yeats) Ma @YeatsMar ym462@cornell.edu
 - Jingxuan(Kelly) Sun @shakingkelly js3422@cornell.edu
 - Ta-Wei(David) Mao @davidmao8419 tm592@cornell.edu
-- Yixue Wang yw2224@cornell.edu
+- Yixue Wang @yw2224 yw2224@cornell.edu
 
