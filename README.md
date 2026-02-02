@@ -1,48 +1,338 @@
-# Predicting Medical Billing Codes (ICD9) from Clinical Notes (in MIMIC-III datasets) using Deep Learning
+# ICD-9 Code Prediction from Clinical Notes
 
-[Under Construction]
+Predicting Medical Billing Codes (ICD-9) from Clinical Notes in MIMIC-III using Deep Learning.
 
-## Introduction
-This is the code for our final project for cs5787 Deep Learning at Cornell University. In this project, we investigate how to approximate the mapping from the medical notes to predict the medical codes in the revenue cycle. This can be achieved through multi-label classification, hierarchical classification, and information retrieval. In our work, We will implement 5 models: (i) Hierarchical Self Attention Network (ii) Self-Attention Long-Short Term Memory (SLSTM) (iii) Codes Attentive Long-Short Term Memory (CLSTM) (iv) Hierarchical Attention Network (HAN) (v) Fine Tuning on Pre-trained Clinical BERT.
-Particularly, we try two types of attention mechanisms for different model architectures. All our models are validated on the publicly available MIMIC-IIIdataset using macro-F1, micro-F1 and precision@N metrics.
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-1.9+-ee4c2c.svg)](https://pytorch.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Data
-We will train and evaluate our approach on [MIMIC-III](https://www.nature.com/articles/sdata201635) (Medical Information Mart for Intensive Care). It is an open-access dataset comprising de-identified medical records from Beth Israel Deaconess Medical Center from 2001 to 2012. The data is associated with 58,976 distinct hospital admissions from 46,520 patients. Each record describes the diagnoses and procedures during a patient’s stay, including basic structured information, free-text clinical notes, and ICD-9 codes tagged by humans. A detailed description of the dataset could be found [here](https://mimic.physionet.org/). For the purpose of this project, we only used the tables below:
-![Data Schema](./imgs/Schema.png)
+## Overview
 
-## Preprocessing
-- [Data Processing](./Preprocess/data_processing.ipynb) file contains methods to extract, transform and load the medical notes and codes from corresponding tables. 
-- [Note Sections](./Preprocess/note_sections.ipynb) file slice the medical notes into different sections, and then further sliced each section to individual sentences. By consulting literatures and medical professionals, the preprocess discarded meaningless portions, converted text to lowercase, removed stopwords and special characters, and peformed lemmatization and tokenization.
-- [High Level Codes](./Preprocess/high_lvl_codes.ipynb) file mapps the low level ICD codes to higher levels and group them into categories.
+This project implements multiple deep learning models for automatic ICD-9 code prediction from clinical notes. Given a patient's clinical documentation, the models predict relevant diagnostic codes to assist with medical billing and clinical decision support.
+
+### Key Features
+
+- **5 Model Architectures**: SLSTM, CLSTM, HAN, Hierarchical Self-Attention, and Fine-tuned ClinicalBERT
+- **Comprehensive Preprocessing**: Clinical note section extraction, tokenization, and ICD code hierarchy mapping
+- **Multi-label Classification**: Predicts multiple ICD-9 codes per clinical note
+- **Evaluation Metrics**: Macro-F1, Micro-F1, Precision@N
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Data Setup](#data-setup)
+- [Models](#models)
+- [Usage](#usage)
+- [Evaluation](#evaluation)
+- [Project Structure](#project-structure)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [Authors](#authors)
+- [License](#license)
+
+## Installation
+
+### Prerequisites
+
+- Python 3.8 or higher
+- CUDA-capable GPU (recommended for training)
+- Access to MIMIC-III dataset (requires credentialing)
+
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/ziyuqiu/icd_prediction.git
+   cd icd_prediction
+   ```
+
+2. **Create a virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Download NLTK data**
+   ```python
+   import nltk
+   nltk.download('punkt')
+   nltk.download('stopwords')
+   ```
+
+## Quick Start
+
+```python
+# Example: Load preprocessed data and run inference
+import pickle
+import torch
+
+# Load preprocessed data
+with open('data/test_tensor.pkl', 'rb') as f:
+    X_test, y_test, ids_test = pickle.load(f)
+
+# Load trained model
+model = torch.load('model_checkpoint.ckpt')
+model.eval()
+
+# Run prediction
+with torch.no_grad():
+    predictions = model(X_test)
+```
+
+## Data Setup
+
+### MIMIC-III Access
+
+This project uses the [MIMIC-III](https://mimic.physionet.org/) dataset. To obtain access:
+
+1. Complete the CITI training course
+2. Sign the Data Use Agreement on PhysioNet
+3. Download the following tables:
+   - `NOTEEVENTS.csv` - Clinical notes
+   - `DIAGNOSES_ICD.csv` - ICD-9 diagnosis codes
+   - `D_ICD_DIAGNOSES.csv` - ICD-9 code descriptions
+   - `ADMISSIONS.csv` - Hospital admissions
+
+### Data Schema
+
+![MIMIC-III Schema](./imgs/Schema.png)
+
+### Preprocessing Pipeline
+
+Run the preprocessing notebooks in order:
+
+```bash
+# 1. Extract and transform data
+jupyter notebook Preprocess/data_processing.ipynb
+
+# 2. Process note sections
+jupyter notebook Preprocess/note_sections.ipynb
+
+# 3. Map ICD codes to hierarchical levels
+jupyter notebook Preprocess/high_lvl_codes.ipynb
+```
+
+**Expected Output Files:**
+- `data/train_tensor.pkl` - Training data (X, y, ids)
+- `data/dev_tensor.pkl` - Validation data
+- `data/test_tensor.pkl` - Test data
+- `data/word2index.pkl` - Vocabulary mapping
+- `data/mlb.pkl` - MultiLabelBinarizer for ICD codes
 
 ## Models
 
-### LSTM (Long-Short Term Memory Networks)
-We experimented with Self-Attention Long-Short Term Memory (SLSTM) and Codes Attentive Long-Short Term Memory (CLSTM). Both are comparatively shallow networks with one core bi-directional LSTM layer for word-level encoding. Attention is used to generate a probability distribution over features, allowing models to put more weight on relevant features.
-CLSTM takes an additional title matrix as input, and achieved superior peformance than the simpler SLSTM.
-- [LSTM](./LSTM/LSTM.ipynb) contains the model and evaluation for the two LSTM models.
-- [util](./LSTM/util.py) provides the code to extract the code titles (disease names) and build corpus.
+### 1. LSTM Models (SLSTM & CLSTM)
 
-<img src="https://github.com/ziyuqiu/icd_prediction/blob/master/imgs/LSTM.png" width="500">
+Bidirectional LSTM with attention mechanisms for word-level encoding.
 
-### HAN (Hierarchical Attention Network)
-HAN applies attention mechanisms at each hierarchical level of a document. As shown in the figure, sequence encoder and attention layers are applied at word-level first, and then at sentence-level to build a document vector. This document representation is used by the last fully-connected layer with its corresponding activation function for the final classification. This allows the model to progressively build a document vector by attending and aggregating encoders’ outputs at different levels, so as to better capture the hierarchical structure of documents and differentiate importance between contents.
-<img src="https://github.com/ziyuqiu/icd_prediction/blob/master/imgs/HAN.png" width="400">
+| Model | Description |
+|-------|-------------|
+| SLSTM | Self-Attention LSTM (baseline) |
+| CLSTM | Codes Attentive LSTM with disease title embeddings |
 
+![LSTM Architecture](./imgs/LSTM.png)
 
-### BERT (Bidirectional Encoder Representations from Transformers)
-BERT is designed to pre-train a deep language representation model which can be easily fine-tuned with one additional output layer to solve the challenges of question answering and language inference etc. ClinicalBERT was trained specifically to conquer biomedical text mining tasks on the basis on BioBERT.
+**Training:**
+```bash
+jupyter notebook LSTM/LSTM.ipynb
+```
 
-Our model is fine-tuned on Clinical BERT using all MIMIC notes version based on BioBERT-Base v1. + PubMed 200K + PMC 270K. We use its default setting as 28996 vocabulary size, 768 embedding dimension and the hidden state dimension is the same as 768. The pre-trained model ends with a BertPooler layer and is concatenated with a dense layer to output logits for multi-label prediction. Sigmoid activation function is leveraged to output probabilities for each code label based on the logits. Only those labels of probability greater than 0.5 would be considered positive. Since the exponential function in sigmoid can cause overflow issue, we apply gradient clipping to the logits before feeding it into the loss function. The clip norm is set as [-0.14, 0.14]. 
+### 2. Hierarchical Attention Network (HAN)
 
-Due to the restriction of BERT’s maximum sequence length, we limit the maximum sequence length for our batched data as 512 and batch size is 8. Detailed codes are provided [here](./BERT/).
+Two-level attention (word → sentence → document) for capturing document hierarchy.
 
+![HAN Architecture](./imgs/HAN.png)
+
+**Training:**
+```bash
+jupyter notebook HAN/HAN.ipynb
+```
+
+### 3. ClinicalBERT
+
+Fine-tuned [ClinicalBERT](https://github.com/EmilyAlsentzer/clinicalBERT) for multi-label classification.
+
+**Configuration:**
+- Vocabulary: 28,996 tokens
+- Embedding dimension: 768
+- Max sequence length: 512
+- Batch size: 8
+- Gradient clipping: [-14.0, 14.0]
+
+**Training:**
+```bash
+cd BERT
+python model.py
+```
+
+**Evaluation:**
+```bash
+python BERT/evaluate.py --model_path model_checkpoint.ckpt
+```
+
+## Usage
+
+### Training a Model
+
+```python
+from BERT.model import ClinicBertMultiLabelClassifier
+import pytorch_lightning as pl
+
+# Initialize model
+model = ClinicBertMultiLabelClassifier()
+
+# Train
+trainer = pl.Trainer(max_epochs=100, gpus=1)
+trainer.fit(model)
+```
+
+### Making Predictions
+
+```python
+import torch
+from transformers import AutoTokenizer
+
+# Load model
+checkpoint = torch.load('model_checkpoint.ckpt')
+model.load_state_dict(checkpoint['model'])
+model.eval()
+
+# Tokenize input
+tokenizer = AutoTokenizer.from_pretrained("emilyalsentzer/Bio_ClinicalBERT")
+inputs = tokenizer("Patient presents with chest pain...",
+                   max_length=512,
+                   padding='max_length',
+                   return_tensors='pt')
+
+# Predict
+with torch.no_grad():
+    probs = model(inputs['input_ids'])
+    predicted_codes = (probs > 0.5).int()
+```
+
+## Evaluation
+
+### Metrics
+
+| Metric | Description |
+|--------|-------------|
+| Micro-F1 | Global F1 across all labels |
+| Macro-F1 | Average F1 per label |
+| Precision@8 | Precision for top 8 predictions |
+| Precision@15 | Precision for top 15 predictions |
+
+### Running Evaluation
+
+```bash
+python BERT/evaluate.py \
+    --model_path checkpoints/best_model.ckpt \
+    --test_data data/test_tensor.pkl
+```
+
+## Project Structure
+
+```
+icd_prediction/
+├── BERT/
+│   ├── model.py          # ClinicalBERT classifier
+│   ├── evaluate.py       # Evaluation script
+│   ├── utils.py          # BERT utilities
+│   └── plot.ipynb        # Training visualization
+├── LSTM/
+│   ├── LSTM.ipynb        # SLSTM and CLSTM models
+│   └── util.py           # Data utilities
+├── HAN/
+│   └── HAN.ipynb         # Hierarchical Attention Network
+├── Preprocess/
+│   ├── data_processing.ipynb    # ETL from MIMIC-III
+│   ├── note_sections.ipynb      # Text preprocessing
+│   ├── high_lvl_codes.ipynb     # ICD code mapping
+│   └── heuristic_tokenize.py    # Sentence tokenization
+├── tests/
+│   ├── conftest.py       # Shared fixtures
+│   └── unit/             # Unit tests
+├── imgs/                 # Architecture diagrams
+├── requirements.txt      # Dependencies
+├── pytest.ini           # Test configuration
+└── README.md
+```
+
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests with coverage
+pytest
+
+# Run specific test file
+pytest tests/unit/test_heuristic_tokenize.py
+
+# Run with verbose output
+pytest -v --cov-report=term-missing
+```
+
+### Test Coverage Target
+
+This project maintains **80%+ test coverage**. Coverage reports are generated automatically:
+
+```bash
+# Generate HTML coverage report
+pytest --cov-report=html
+open htmlcov/index.html
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Write tests for new functionality
+4. Ensure all tests pass (`pytest`)
+5. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Code Style
+
+- Follow PEP 8 guidelines
+- Use type hints where possible
+- Write docstrings for public functions
+- Keep functions small and focused
 
 ## Authors
 
-- Ziyu(Andrea) Qiu @ziyuqiu zq64@cornell.edu
-- Yezhou(Yeats) Ma @YeatsMar ym462@cornell.edu
-- Jingxuan(Kelly) Sun @shakingkelly js3422@cornell.edu
-- Ta-Wei(David) Mao @davidmao8419 tm592@cornell.edu
-- Yixue Wang @yw2224 yw2224@cornell.edu
+- **Ziyu (Andrea) Qiu** - [@ziyuqiu](https://github.com/ziyuqiu) - zq64@cornell.edu
+- **Yezhou (Yeats) Ma** - [@YeatsMar](https://github.com/YeatsMar) - ym462@cornell.edu
+- **Jingxuan (Kelly) Sun** - [@shakingkelly](https://github.com/shakingkelly) - js3422@cornell.edu
+- **Ta-Wei (David) Mao** - [@davidmao8419](https://github.com/davidmao8419) - tm592@cornell.edu
+- **Yixue Wang** - [@yw2224](https://github.com/yw2224) - yw2224@cornell.edu
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [MIMIC-III](https://mimic.physionet.org/) dataset from PhysioNet
+- [ClinicalBERT](https://github.com/EmilyAlsentzer/clinicalBERT) pre-trained model
+- Cornell University CS5787 Deep Learning course
+
+## Citation
+
+If you use this code in your research, please cite:
+
+```bibtex
+@misc{icd_prediction,
+  author = {Qiu, Ziyu and Ma, Yezhou and Sun, Jingxuan and Mao, Ta-Wei and Wang, Yixue},
+  title = {Predicting Medical Billing Codes from Clinical Notes using Deep Learning},
+  year = {2020},
+  publisher = {GitHub},
+  url = {https://github.com/ziyuqiu/icd_prediction}
+}
+```
